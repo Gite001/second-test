@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Application Futuriste de Gestion de Cafétéria</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* ------------------------------ */
+    /* STYLES GÉNÉRAUX ET RESPONSIVES */
+    /* ------------------------------ */
+    body {
+      margin: 0;
+      font-family: 'Arial', sans-serif;
+      background: url('images/background.jpg') no-repeat center center fixed;
+      background-size: cover;
+      transition: background 0.5s;
+    }
+    header {
+      text-align: center;
+      padding: 20px;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      position: relative;
+    }
+    #languageToggle {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+    }
+    #languageToggle button {
+      margin: 0 5px;
+      padding: 5px 10px;
+      cursor: pointer;
+      border: none;
+      background: #333;
+      color: #fff;
+      border-radius: 5px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      transition: transform 0.2s;
+    }
+    #languageToggle button:hover {
+      transform: scale(1.1);
+    }
+    #mainContainer {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 10px;
+    }
+    .column {
+      flex: 1;
+      margin: 10px;
+      background: rgba(255,255,255,0.8);
+      border-radius: 10px;
+      padding: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+      transition: transform 0.3s;
+    }
+    .column:hover {
+      transform: scale(1.02);
+    }
+    #categories, #order {
+      max-width: 250px;
+    }
+    /* Liste des catégories */
+    .category-item {
+      list-style: none;
+      padding: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .category-item:hover {
+      background: #ddd;
+    }
+    /* Produits */
+    #productList {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .product-item {
+      margin: 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+    .product-item img {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      transition: transform 0.3s;
+    }
+    .product-item img:active {
+      transform: scale(1.1);
+    }
+    /* Boutons de commande et administration */
+    #orderButtons button {
+      margin: 5px;
+      padding: 10px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      transition: transform 0.2s;
+    }
+    #orderButtons button:hover {
+      transform: translateY(-3px);
+    }
+    /* ------------------------------ */
+    /* MODALS (Calculatrice, Admin, Statistiques) */
+    /* ------------------------------ */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background: rgba(0,0,0,0.7);
+    }
+    .modal-content {
+      background: #fff;
+      margin: 10% auto;
+      padding: 20px;
+      border-radius: 10px;
+      width: 80%;
+      max-width: 600px;
+      position: relative;
+    }
+    .close {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    /* Calculatrice */
+    #calculator {
+      text-align: center;
+    }
+    #calcDisplay {
+      width: 100%;
+      padding: 10px;
+      font-size: 1.2em;
+      text-align: right;
+      margin-bottom: 10px;
+    }
+    #calcButtons button {
+      width: 22%;
+      margin: 1%;
+      padding: 10px;
+      font-size: 1em;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      transition: transform 0.2s;
+    }
+    #calcButtons button:hover {
+      transform: translateY(-3px);
+    }
+    /* Boutons utilitaires */
+    #utilityButtons {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+    #utilityButtons button {
+      margin: 5px;
+      padding: 10px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      background: #333;
+      color: #fff;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      transition: transform 0.2s;
+    }
+    #utilityButtons button:hover {
+      transform: translateY(-3px);
+    }
+    /* ------------------------------ */
+    /* MODE SOMBRE */
+    body.dark {
+      background: #121212;
+      color: #e0e0e0;
+    }
+    body.dark header {
+      background: rgba(0,0,0,0.8);
+    }
+    body.dark .column {
+      background: rgba(50,50,50,0.8);
+    }
+  </style>
+</head>
+<body>
+  <!-- En-tête avec le nom de la cafétéria et sélecteur de langue -->
+  <header>
+    <h1 id="cafeteriaName">LA CAISSE</h1>
+    <div id="languageToggle">
+      <button onclick="setLanguage('fr')">FR</button>
+      <button onclick="setLanguage('ar')">ع</button>
+    </div>
+  </header>
+
+  <!-- Conteneur principal en trois colonnes -->
+  <div id="mainContainer">
+    <!-- Colonne gauche : Catégories -->
+    <div id="categories" class="column">
+      <h2 data-i18n="categories">Catégories</h2>
+      <ul id="categoryList"></ul>
+    </div>
+    <!-- Colonne centrale : Produits -->
+    <div id="products" class="column">
+      <h2 data-i18n="products">Produits</h2>
+      <div id="productList"></div>
+    </div>
+    <!-- Colonne droite : Commande en cours et boutons d'action -->
+    <div id="order" class="column">
+      <h2 data-i18n="order">Commande en cours</h2>
+      <div id="orderList"></div>
+      <div id="orderButtons">
+        <button id="btnConfirm" onclick="confirmOrder()" data-i18n="confirm">Confirmer</button>
+        <button id="btnCancel" onclick="cancelOrder()" data-i18n="cancel">Annuler</button>
+        <button id="btnPrint" onclick="printTicket()" data-i18n="print">Imprimer</button>
+        <button id="btnStats" onclick="openAdminModal()" data-i18n="stats">Statistiques</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Calculatrice -->
+  <div id="calculatorModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeCalculator()">×</span>
+      <div id="calculator">
+        <input type="text" id="calcDisplay" disabled>
+        <div id="calcButtons">
+          <button onclick="calcInput('7')">7</button>
+          <button onclick="calcInput('8')">8</button>
+          <button onclick="calcInput('9')">9</button>
+          <button onclick="calcInput('/')">/</button>
+          <button onclick="calcInput('4')">4</button>
+          <button onclick="calcInput('5')">5</button>
+          <button onclick="calcInput('6')">6</button>
+          <button onclick="calcInput('*')">*</button>
+          <button onclick="calcInput('1')">1</button>
+          <button onclick="calcInput('2')">2</button>
+          <button onclick="calcInput('3')">3</button>
+          <button onclick="calcInput('-')">-</button>
+          <button onclick="calcInput('0')">0</button>
+          <button onclick="calcInput('.')">.</button>
+          <button onclick="calculateResult()">=</button>
+          <button onclick="calcInput('+')">+</button>
+          <button onclick="clearCalc()">C</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Administration / Statistiques -->
+  <div id="adminModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeAdminModal()">×</span>
+      <h2 data-i18n="adminSettings">Paramètres Admin</h2>
+      <div>
+        <label data-i18n="adminCode">Code Admin :</label>
+        <input type="password" id="adminCodeInput">
+        <button onclick="checkAdminCode()" data-i18n="enter">Entrer</button>
+      </div>
+      <div id="adminPanel" style="display:none;">
+        <h3 data-i18n="settings">Paramètres</h3>
+        <div>
+          <label data-i18n="cafeteriaName">Nom de la Cafétéria :</label>
+          <input type="text" id="editCafeteriaName">
+        </div>
+        <div>
+          <label data-i18n="currency">Devise :</label>
+          <input type="text" id="editCurrency">
+        </div>
+        <div>
+          <label data-i18n="backgroundImage">Image de Fond :</label>
+          <input type="file" id="editBackgroundImage" accept="image/*">
+        </div>
+        <!-- Gestion des catégories -->
+        <div id="adminCategories">
+          <h3 data-i18n="manageCategories">Gérer Catégories</h3>
+          <ul id="adminCategoryList"></ul>
+          <input type="text" id="newCategoryName" placeholder="Nom de la catégorie">
+          <button onclick="addCategory()" data-i18n="addCategory">Ajouter Catégorie</button>
+        </div>
+        <!-- Gestion des produits -->
+        <div id="adminProducts">
+          <h3 data-i18n="manageProducts">Gérer Produits</h3>
+          <ul id="adminProductList"></ul>
+          <div>
+            <input type="text" id="newProductName" placeholder="Nom du produit">
+            <input type="file" id="newProductImage" accept="image/*">
+            <input type="text" id="newProductPrices" placeholder="Prix (séparés par des virgules)">
+            <select id="newProductCategory"></select>
+            <button onclick="addProduct()" data-i18n="addProduct">Ajouter Produit</button>
+          </div>
+        </div>
+        <div>
+          <button onclick="saveAdminSettings()" data-i18n="saveSettings">Sauvegarder</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Boutons utilitaires (Plein écran, Mode sombre/clair, Calculatrice) -->
+  <div id="utilityButtons">
+    <button onclick="toggleFullScreen()" data-i18n="fullscreen">Plein écran</button>
+    <button onclick="toggleDarkMode()" data-i18n="toggleMode">Mode sombre/clair</button>
+    <button onclick="openCalculator()" data-i18n="calculator">Calculatrice</button>
+  </div>
+
+  <script>
+    /***** VARIABLES ET TRADUCTIONS *****/
+    let language = 'fr'; // langue par défaut
+    const translations = {
+      fr: {
+        categories: "Catégories",
+        products: "Produits",
+        order: "Commande en cours",
+        confirm: "Confirmer",
+        cancel: "Annuler",
+        print: "Imprimer",
+        stats: "Statistiques",
+        adminSettings: "Paramètres Admin",
+        adminCode: "Code Admin :",
+        enter: "Entrer",
+        settings: "Paramètres",
+        cafeteriaName: "Nom de la Cafétéria :",
+        currency: "Devise :",
+        backgroundImage: "Image de Fond :",
+        manageCategories: "Gérer Catégories",
+        addCategory: "Ajouter Catégorie",
+        manageProducts: "Gérer Produits",
+        addProduct: "Ajouter Produit",
+        saveSettings: "Sauvegarder",
+        statistics: "Statistiques",
+        fullscreen: "Plein écran",
+        toggleMode: "Mode sombre/clair",
+        calculator: "Calculatrice"
+      },
+      ar: {
+        categories: "الفئات",
+        products: "المنتجات",
+        order: "الطلب الحالي",
+        confirm: "تأكيد",
+        cancel: "إلغاء",
+        print: "طباعة",
+        stats: "إحصائيات",
+        adminSettings: "إعدادات الإدارة",
+        adminCode: "رمز الإدارة:",
+        enter: "دخول",
+        settings: "الإعدادات",
+        cafeteriaName: "اسم الكافتيريا:",
+        currency: "العملة:",
+        backgroundImage: "صورة الخلفية:",
+        manageCategories: "إدارة الفئات",
+        addCategory: "إضافة فئة",
+        manageProducts: "إدارة المنتجات",
+        addProduct: "إضافة منتج",
+        saveSettings: "حفظ",
+        statistics: "إحصائيات",
+        fullscreen: "ملء الشاشة",
+        toggleMode: "الوضع الداكن/الفاتح",
+        calculator: "آلة حاسبة"
+      }
+    };
+
+    // Données initiales pour catégories et produits
+    let categories = [
+      { id: 0, name: language === 'fr' ? "Tous les produits" : "كل المنتجات" },
+      { id: 1, name: "Boissons" },
+      { id: 2, name: "Snacks" },
+      { id: 3, name: "Desserts" },
+      { id: 4, name: "Sandwichs" }
+    ];
+    let products = [
+      { id: 1, name: "Café", category: 1, image: "images/cafe.jpg", prices: [10,12,15,20], sold: 0 },
+      { id: 2, name: "Thé", category: 1, image: "images/the.jpg", prices: [8,10,12], sold: 0 },
+      { id: 3, name: "Jus d'orange", category: 1, image: "images/jus.jpg", prices: [15], sold: 0 },
+      { id: 4, name: "Croissant", category: 2, image: "images/croissant.jpg", prices: [5], sold: 0 },
+      { id: 5, name: "Muffin", category: 2, image: "images/muffin.jpg", prices: [7], sold: 0 }
+    ];
+    let currentOrder = [];
+    let dailyRevenue = 0;
+    let monthlyRevenue = 0;
+    let adminCode = "1234"; // code admin par défaut
+    let currency = "MAD"; // devise par défaut
+    let darkMode = false;
+
+    /***** INTERNATIONALISATION *****/
+    function setLanguage(lang) {
+      language = lang;
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if(translations[language] && translations[language][key]) {
+          el.innerText = translations[language][key];
+        }
+      });
+      document.body.style.direction = (language === 'ar') ? 'rtl' : 'ltr';
+      renderCategories();
+      renderProducts();
+    }
+
+    /***** RENDER DES CATÉGORIES, PRODUITS ET COMMANDE *****/
+    function renderCategories() {
+      const list = document.getElementById('categoryList');
+      list.innerHTML = "";
+      categories.forEach(cat => {
+        const li = document.createElement('li');
+        li.innerText = cat.name;
+        li.classList.add('category-item');
+        li.onclick = () => { renderProducts(cat.id); };
+        list.appendChild(li);
+      });
+    }
+    function renderProducts(categoryId = 0) {
+      const container = document.getElementById('productList');
+      container.innerHTML = "";
+      const filtered = (categoryId === 0) ? products : products.filter(p => p.category === categoryId);
+      filtered.forEach(prod => {
+        const div = document.createElement('div');
+        div.classList.add('product-item');
+        div.innerHTML = `
+          <img src="${prod.image}" alt="${prod.name}" onclick="productClick(${prod.id})">
+          <p>${prod.name}</p>
+          <p>${currency} ${prod.prices[0]}</p>
+        `;
+        container.appendChild(div);
+      });
+    }
+    function renderOrder() {
+      const container = document.getElementById('orderList');
+      container.innerHTML = "";
+      let total = 0;
+      currentOrder.forEach(item => {
+        const div = document.createElement('div');
+        div.classList.add('order-item');
+        div.innerText = `${item.name} x${item.quantity} = ${currency} ${item.price * item.quantity}`;
+        total += item.price * item.quantity;
+        container.appendChild(div);
+      });
+      const totalDiv = document.createElement('div');
+      totalDiv.classList.add('order-total');
+      totalDiv.innerText = `${currency} ${total}`;
+      container.appendChild(totalDiv);
+    }
+
+    /***** GESTION DES PRODUITS : SÉLECTION ET AJOUT À LA COMMANDE *****/
+    function productClick(productId) {
+      const product = products.find(p => p.id === productId);
+      if(product) {
+        if(product.prices.length > 1) {
+          let priceStr = product.prices.join(", ");
+          let selected = prompt(`Choisissez un prix pour ${product.name} (${priceStr} ${currency}) :`, product.prices[0]);
+          selected = parseFloat(selected);
+          if(product.prices.includes(selected)) {
+            addToOrder(product, selected);
+          } else {
+            alert("Prix invalide.");
+          }
+        } else {
+          addToOrder(product, product.prices[0]);
+        }
+      }
+    }
+    function addToOrder(product, price) {
+      if(navigator.vibrate) navigator.vibrate(50);
+      let orderItem = currentOrder.find(item => item.id === product.id && item.price === price);
+      if(orderItem) {
+        orderItem.quantity++;
+      } else {
+        currentOrder.push({ id: product.id, name: product.name, price: price, quantity: 1 });
+      }
+      product.sold += 1;
+      renderOrder();
+    }
+
+    /***** GESTION DE LA COMMANDE *****/
+    function confirmOrder() {
+      let total = currentOrder.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      dailyRevenue += total;
+      monthlyRevenue += total;
+      alert("Commande confirmée !");
+      currentOrder = [];
+      renderOrder();
+      backupData();
+    }
+    function cancelOrder() {
+      currentOrder = [];
+      renderOrder();
+    }
+    function printTicket() {
+      let total = currentOrder.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      let now = new Date();
+      let ticket = `
+        <h1>${document.getElementById('cafeteriaName').innerText}</h1>
+        <p>${now.toLocaleString()}</p>
+        <ul>
+      `;
+      currentOrder.forEach(item => {
+        ticket += `<li>${item.name} x${item.quantity} = ${currency} ${item.price * item.quantity}</li>`;
+      });
+      ticket += `</ul>
+        <h3>Total: ${currency} ${total}</h3>
+        <p>Merci de votre visite !</p>
+      `;
+      let win = window.open("", "Ticket", "width=300,height=400");
+      win.document.write(ticket);
+      win.print();
+    }
+
+    /***** CALCULATRICE INTÉGRÉE *****/
+    function openCalculator() {
+      document.getElementById('calculatorModal').style.display = 'block';
+    }
+    function closeCalculator() {
+      document.getElementById('calculatorModal').style.display = 'none';
+    }
+    function calcInput(val) {
+      document.getElementById('calcDisplay').value += val;
+    }
+    function calculateResult() {
+      try {
+        let result = eval(document.getElementById('calcDisplay').value);
+        document.getElementById('calcDisplay').value = result;
+      } catch(e) {
+        document.getElementById('calcDisplay').value = "Erreur";
+      }
+    }
+    function clearCalc() {
+      document.getElementById('calcDisplay').value = "";
+    }
+
+    /***** PLEIN ÉCRAN & MODE SOMBRE/CLAIR *****/
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        if(document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+    function toggleDarkMode() {
+      darkMode = !darkMode;
+      document.body.classList.toggle('dark', darkMode);
+    }
+
+    /***** EFFET PARALLAX *****/
+    window.addEventListener('scroll', function(){
+      document.body.style.backgroundPositionY = -(window.pageYOffset * 0.5) + "px";
+    });
+
+    /***** ADMINISTRATION & STATISTIQUES *****/
+    function openAdminModal() {
+      document.getElementById('adminModal').style.display = 'block';
+    }
+    function closeAdminModal() {
+      document.getElementById('adminModal').style.display = 'none';
+    }
+    function checkAdminCode() {
+      let code = document.getElementById('adminCodeInput').value;
+      if(code === adminCode) {
+        document.getElementById('adminPanel').style.display = 'block';
+        showStats();
+        refreshAdminLists();
+      } else {
+        alert("Code incorrect !");
+      }
+    }
+    function showStats() {
+      let statsContent = document.getElementById('adminPanel');
+      statsContent.innerHTML += `
+        <p>Ventes journalières: ${currency} ${dailyRevenue}</p>
+        <p>Ventes mensuelles: ${currency} ${monthlyRevenue}</p>
+      `;
+    }
+    function saveAdminSettings() {
+      let newName = document.getElementById('editCafeteriaName').value;
+      if(newName) { document.getElementById('cafeteriaName').innerText = newName; }
+      let newCurrency = document.getElementById('editCurrency').value;
+      if(newCurrency) { currency = newCurrency; renderProducts(); renderOrder(); }
+      let fileInput = document.getElementById('editBackgroundImage');
+      if(fileInput.files && fileInput.files[0]) {
+        let reader = new FileReader();
+        reader.onload = function(e) {
+          document.body.style.backgroundImage = `url(${e.target.result})`;
+          localStorage.setItem('backgroundImage', e.target.result);
+        }
+        reader.readAsDataURL(fileInput.files[0]);
+      }
+      backupData();
+      alert("Paramètres sauvegardés !");
+      closeAdminModal();
+    }
+
+    /***** SAUVEGARDE & RESTAURATION DES DONNÉES *****/
+    function backupData() {
+      const data = { categories, products, dailyRevenue, monthlyRevenue, adminCode, currency };
+      localStorage.setItem('cafeteriaData', JSON.stringify(data));
+    }
+    function restoreData() {
+      const data = localStorage.getItem('cafeteriaData');
+      if(data) {
+        const parsed = JSON.parse(data);
+        categories = parsed.categories;
+        products = parsed.products;
+        dailyRevenue = parsed.dailyRevenue;
+        monthlyRevenue = parsed.monthlyRevenue;
+        adminCode = parsed.adminCode;
+        currency = parsed.currency;
+      }
+    }
+    setInterval(backupData, 30000);
+
+    /***** ADMIN PANEL : GESTION DES CATÉGORIES & PRODUITS *****/
+    function refreshAdminLists() {
+      const adminCatList = document.getElementById('adminCategoryList');
+      adminCatList.innerHTML = "";
+      categories.forEach(cat => {
+        const li = document.createElement('li');
+        li.innerText = cat.name;
+        const btnDel = document.createElement('button');
+        btnDel.innerText = "X";
+        btnDel.onclick = () => { removeCategory(cat.id); };
+        li.appendChild(btnDel);
+        adminCatList.appendChild(li);
+      });
+      const adminProdList = document.getElementById('adminProductList');
+      adminProdList.innerHTML = "";
+      products.forEach(prod => {
+        const li = document.createElement('li');
+        li.innerText = `${prod.name} - ${prod.prices.join(", ")} ${currency}`;
+        const btnDel = document.createElement('button');
+        btnDel.innerText = "X";
+        btnDel.onclick = () => { removeProduct(prod.id); };
+        li.appendChild(btnDel);
+        adminProdList.appendChild(li);
+      });
+      const select = document.getElementById('newProductCategory');
+      select.innerHTML = "";
+      categories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat.id;
+        option.innerText = cat.name;
+        select.appendChild(option);
+      });
+    }
+    function addCategory() {
+      const name = document.getElementById('newCategoryName').value;
+      if(name) {
+        categories.push({ id: Date.now(), name });
+        document.getElementById('newCategoryName').value = "";
+        renderCategories();
+        refreshAdminLists();
+        backupData();
+      }
+    }
+    function removeCategory(id) {
+      categories = categories.filter(cat => cat.id !== id);
+      renderCategories();
+      refreshAdminLists();
+      backupData();
+    }
+    function addProduct() {
+      const name = document.getElementById('newProductName').value;
+      const imageInput = document.getElementById('newProductImage');
+      const pricesStr = document.getElementById('newProductPrices').value;
+      const categoryId = parseInt(document.getElementById('newProductCategory').value);
+      if(name && imageInput.files && imageInput.files[0] && pricesStr) {
+        let reader = new FileReader();
+        reader.onload = function(e) {
+          let prices = pricesStr.split(",").map(p => parseFloat(p.trim())).filter(p => !isNaN(p));
+          products.push({ id: Date.now(), name, category: categoryId, image: e.target.result, prices, sold: 0 });
+          renderProducts();
+          refreshAdminLists();
+          backupData();
+        }
+        reader.readAsDataURL(imageInput.files[0]);
+      } else {
+        alert("Veuillez remplir tous les champs.");
+      }
+    }
+    function removeProduct(id) {
+      products = products.filter(prod => prod.id !== id);
+      renderProducts();
+      refreshAdminLists();
+      backupData();
+    }
+
+    /***** INITIALISATION *****/
+    window.onload = function() {
+      restoreData();
+      setLanguage(language);
+      renderCategories();
+      renderProducts();
+      renderOrder();
+      const bg = localStorage.getItem('backgroundImage');
+      if(bg) { document.body.style.backgroundImage = `url(${bg})`; }
+    }
+  </script>
+</body>
+</html>
